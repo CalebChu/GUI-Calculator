@@ -1,2 +1,2 @@
 # GUI-Calculator
-A calculator gui made with python.
+A calculator gui made with python library tkinter.
