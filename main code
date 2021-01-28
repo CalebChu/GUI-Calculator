@@ -1,0 +1,159 @@
+import tkinter as tk
+import operator as ops
+
+# Math Code
+# --------------------------------------------------------------------------------------------------------------
+operatorFunctions = {'+': ops.add, '-': ops.sub, '×': ops.mul, '÷': ops.truediv}
+operators = ['+', '-', '×', '÷']
+
+
+def calculateNums(finalQuestion):
+    start = 0
+    for i in range(finalQuestion.count('×') + finalQuestion.count('÷')):
+        if '×' in finalQuestion:
+            mulIndex = finalQuestion.index('×')
+        else:
+            mulIndex = len(finalQuestion)
+
+        if '÷' in finalQuestion:
+            divIndex = finalQuestion.index('÷')
+        else:
+            divIndex = len(finalQuestion)
+
+        if mulIndex < divIndex:
+            getResult(finalQuestion, '×', mulIndex)
+        else:
+            getResult(finalQuestion, '÷', divIndex)
+
+    for i in range(finalQuestion.count('+') + finalQuestion.count('-')):
+        if '+' in finalQuestion:
+            addIndex = finalQuestion.index('+')
+        else:
+            addIndex = len(finalQuestion)
+
+        if '-' in finalQuestion:
+            subIndex = finalQuestion.index('-')
+        else:
+            subIndex = len(finalQuestion)
+
+        if addIndex < subIndex:
+            getResult(finalQuestion, '+', addIndex)
+        else:
+            getResult(finalQuestion, '-', subIndex)
+
+    return finalQuestion
+
+
+def getResult(finalQuestion, operator, i):
+    result = operatorFunctions[operator](finalQuestion[i - 1], finalQuestion[i + 1])
+    finalQuestion[i - 1] = str(finalQuestion[i - 1])
+    finalQuestion[i + 1] = str(finalQuestion[i + 1])
+    finalQuestion[i - 1: i + 2] = [''.join(finalQuestion[i - 1: i + 2])]
+    finalQuestion[i - 1] = result
+    return finalQuestion
+
+
+def floatNums(finalQuestion):
+    for i in range(len(finalQuestion)):
+        if finalQuestion[i].replace('.', '', 1).isdigit() or finalQuestion[i].replace('.', '', 1)[1:].isdigit():
+            finalQuestion[i] = float(finalQuestion[i])
+    return finalQuestion
+
+
+def createQuestionList(input):
+    inputList = list(input)
+
+    def addSplitDelimiters(operator):
+        previousIndex = 0
+        for i in range(input.count(operator)):
+            newIndex = inputList.index(operator, previousIndex)
+            previousIndex = newIndex + 2
+            inputList.insert(newIndex + 1, ',')
+            inputList.insert(newIndex, ',')
+
+    addSplitDelimiters('+')
+    addSplitDelimiters('-')
+    addSplitDelimiters('×')
+    addSplitDelimiters('÷')
+    joined = ''.join(inputList)
+    finalQuestion = joined.split(',')
+    while '' in finalQuestion:
+        finalQuestion.remove('')
+    startPoint = 0
+    for i in range(finalQuestion.count('-')):
+        index = finalQuestion.index('-', startPoint)
+        startPoint = index + 1
+        if finalQuestion[index + 1].replace('.', '', 1).isdigit() and finalQuestion[index - 1] in operators or index == 0:
+            finalQuestion[index:index + 2] = [''.join(finalQuestion[index:index + 2])]
+
+    return finalQuestion
+
+# GUI code
+# --------------------------------------------------------------------------------------------------------------
+
+
+def deleteEnterC(input):
+    if input == '=':
+        try:
+            lastClicked.set(str(calculateNums(floatNums(createQuestionList(str(lastClicked.get()))))[0]))
+            if str(lastClicked.get()).endswith('.0'):
+                lastClicked.set(lastClicked.get()[:-2])
+        except:
+            lastClicked.set('SYNTAX ERROR')
+    elif input == '⌫':
+        if str(lastClicked.get()) == 'SYNTAX ERROR':
+            lastClicked.set("")
+        lastClicked.set(lastClicked.get()[:-1])
+    else:
+        lastClicked.set("")
+
+
+def addText(input):
+    if str(lastClicked.get()) == 'SYNTAX ERROR':
+        lastClicked.set(input)
+    else:
+        lastClicked.set(lastClicked.get() + input)
+
+
+def addButton(text, r, c, cSpan):
+    button = tk.Button(master=window, text=text,
+                       command=lambda: deleteEnterC(
+                           text) if text == '=' or text == '⌫' or text == 'C' else addText(text))
+    button.grid(row=r, column=c, sticky="nsew", columnspan=cSpan)
+
+
+window = tk.Tk()
+window.geometry("600x300+20+20")
+window.title("Calculator")
+lastClicked = tk.StringVar()
+lastClicked.set("")
+for row in range(6):
+    window.rowconfigure(row, weight=1, minsize=50)
+
+for column in range(4):
+    window.columnconfigure(column, weight=1, minsize=75)
+
+for i, j in zip(operators, range(1, 5)):
+    addButton(i, j, 3, 1)
+number = 1
+row = 1
+column = 0
+while number < 10:
+    addButton(str(number), row, column, 1)
+    number += 1
+    if number == 4 or number == 7 or number == 0:
+        row += 1
+    if column >= 2:
+        column = 0
+    else:
+        column += 1
+
+addButton('0', 4, 1, 1)
+addButton('⌫', 4, 2, 1)
+addButton('=', 5, 0, 4)
+addButton('C', 0, 3, 1)
+addButton('.', 4, 0, 1)
+entry = tk.Label(master=window, textvariable=lastClicked)
+entry.grid(row=0, column=1, columnspan=2)
+doneRendering = True
+window.mainloop()
